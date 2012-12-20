@@ -6,7 +6,7 @@
 # For conditions of distribution and use, see the disclaimer
 # and license in png.h
 
-cmake_minimum_required(VERSION 2.4.4)
+cmake_minimum_required(VERSION 2.8.4)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
 if(UNIX AND NOT DEFINED CMAKE_BUILD_TYPE)
@@ -123,6 +123,34 @@ set(pngtest_sources
 set(pngvalid_sources
   contrib/libtests/pngvalid.c
 )
+
+# SSSE3 stuff
+find_program(CMAKE_ASM_NASM_COMPILER yasm)
+# TODO filter out non-x86 architectures
+# TODO fix msvc+icl pair
+# TODO enable tests on non-win32 systems
+if(CMAKE_ASM_NASM_COMPILER)
+  if(NOT "${CMAKE_ASM_NASM_OBJECT_FORMAT}" MATCHES "64")
+    if(MSVC)
+      set(CMAKE_ASM_NASM_FLAGS_INIT ${CMAKE_ASM_NASM_FLAGS_INIT} "--prefix=_")
+    endif()  
+    enable_language(ASM_NASM)
+    add_definitions(-DPNG_FILTER_OPTIMIZATIONS=png_init_filter_functions_ssse3)
+    set(libpng_sources ${libpng_sources} ssse3/ssse3_init.c ssse3/filter_ssse3.nasm)
+    if(WIN32)
+      set(pngssse3_test_sources ${libpng_sources} ssse3/ssse3_test.c)
+      list(REMOVE_ITEM pngssse3_test_sources pngrutil.c)
+      add_executable(pngssse3_test ${pngssse3_test_sources})
+      target_link_libraries(pngssse3_test ${ZLIB_LIBRARY})
+      add_test(pngssse3 ./pngssse3_test)
+    endif()
+  else()
+    message(STATUS "64 bit SSSE3 is not yet (if ever)")
+  endif()
+else()
+  message(STATUS "yasm was not found, disabling SSSE3")
+endif()
+
 # SOME NEEDED DEFINITIONS
 
 add_definitions(-DPNG_CONFIGURE_LIBPNG)
