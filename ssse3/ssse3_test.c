@@ -13,11 +13,29 @@
 #include "../pngpriv.h"
 #include "../pngrutil.c"
 
-#define ROWLEN (3072 * 4)
+#define ROWLEN (9216 * 4)
 #define ALIGNMENT 16
 #define TRIES 10
 
-// TODO make it non-win32 friendly
+#ifndef _WIN32
+#include <time.h>
+#include <stdlib.h>
+
+void* _aligned_malloc(size_t size, size_t alignment) {
+	void *res;
+
+	if (posix_memalign(&res, alignment, size)) {
+		res = 0;
+	}
+
+	return res;
+}
+
+void _aligned_free(void *memblock) {
+	free(memblock);
+}
+
+#endif
 
 typedef void pngfilterfunc(png_row_infop, png_bytep, png_const_bytep);
 
@@ -30,64 +48,82 @@ typedef struct {
 
 typedef struct {
 	int ok;
-	int time1;
-	int time2;
+	double origtime;
+	double simdtime;
 } testres_t;
 
-int timetest(pngfilterfunc func, png_row_infop infop, png_bytep rowp, png_const_bytep prevrowp) {
+double timetest(pngfilterfunc func, png_row_infop infop, png_bytep rowp, png_const_bytep prevrowp) {
+	double res;
+#ifdef _WIN32
 	LARGE_INTEGER start, stop, freq;
-	int nstime;
+
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&start);
 	func(infop, rowp, prevrowp);
 	QueryPerformanceCounter(&stop);
-	nstime = (int)((stop.QuadPart - start.QuadPart) * 1000000000 / freq.QuadPart);
-	return nstime;
+	res = (double)((long double)(stop.QuadPart - start.QuadPart) / freq.QuadPart);
+#else
+	struct timespec start, stop;
+
+	clock_gettime(CLOCK_REALTIME, &start);
+	func(infop, rowp, prevrowp);
+	clock_gettime(CLOCK_REALTIME, &stop);
+	res = (double)(stop.tv_sec - start.tv_sec);
+	res += (double)(stop.tv_nsec - start.tv_nsec) * 0.000000001;
+#endif
+
+	return res;
 }
 
-testres_t performtest(png_row_info info, testcase_t testcase, png_const_bytep rowp, png_const_bytep prevrowp,
-	int row_unalign, int prevrow_unalign)
+testres_t performtest(png_row_info info, testcase_t testcase,
+                      png_const_bytep rowp, png_const_bytep prevrowp, int row_unalign, int prevrow_unalign)
 {
-	png_bytep workrow1, workrow2;
-	int i, time1[TRIES], time2[TRIES];
 	testres_t testres;
+	double simdtime[TRIES], origtime[TRIES];
+	png_bytep workrow1, workrow2;
+	int i;
 
 	row_unalign %= ALIGNMENT;
 	prevrow_unalign %= ALIGNMENT;
 	info.pixel_depth = testcase.bpp;
+	info.width = info.rowbytes / info.pixel_depth;
 
 	workrow1 = (png_bytep)_aligned_malloc(ROWLEN + ALIGNMENT, ALIGNMENT);
 	workrow2 = (png_bytep)_aligned_malloc(ROWLEN + ALIGNMENT, ALIGNMENT);
 	if (!workrow1 || !workrow2) {
-		testres.time1 = -1;
-		testres.time2 = -1;
+		testres.simdtime = -1;
+		testres.origtime = -1;
 		testres.ok = -1;
 	} else {
 		memcpy(workrow1, rowp, ROWLEN + ALIGNMENT);
 		for (i = 0; i < TRIES; i++)
-			time1[i] = timetest(testcase.simdfunc, &info, workrow1 + row_unalign, prevrowp + prevrow_unalign);
+			simdtime[i] = timetest(testcase.simdfunc, &info,
+			                       workrow1 + row_unalign, prevrowp + prevrow_unalign);
+
 		memcpy(workrow2, rowp, ROWLEN + ALIGNMENT);
 		for (i = 0; i < TRIES; i++)
-			time2[i] = timetest(testcase.origfunc, &info, workrow2 + row_unalign, prevrowp + prevrow_unalign);
+			origtime[i] = timetest(testcase.origfunc, &info,
+			                       workrow2 + row_unalign, prevrowp + prevrow_unalign);
 
-		testres.time1 = time1[0];
-		testres.time2 = time2[0];
+		testres.simdtime = simdtime[0];
+		testres.origtime = origtime[0];
 		for (i = 1; i < TRIES; i++) {
-			if (time1[i] < testres.time1) testres.time1 = time1[i];
-			if (time2[i] < testres.time2) testres.time2 = time2[i];
+			if (simdtime[i] < testres.simdtime) testres.simdtime = simdtime[i];
+			if (origtime[i] < testres.origtime) testres.origtime = origtime[i];
 		}
 
 		testres.ok = !memcmp(workrow1, workrow2, ROWLEN + ALIGNMENT);
 	}
+
 	if (workrow1) _aligned_free(workrow1);
 	if (workrow2) _aligned_free(workrow2);
 	return testres;
 }
 
 int main() {
-	png_byte *rowp = (png_byte*)_aligned_malloc(ROWLEN + ALIGNMENT, ALIGNMENT);
-	png_byte *prevrowp = (png_byte*)_aligned_malloc(ROWLEN + ALIGNMENT, ALIGNMENT);
-	int res = 0;
+	int res;
+	png_bytep rowp;
+	png_bytep prevrowp;
 
 	testcase_t testcases[] = {
 		{24, png_read_filter_row_up, png_read_filter_row_up_sse2, "up"},
@@ -99,12 +135,16 @@ int main() {
 		{32, png_read_filter_row_paeth_multibyte_pixel, png_read_filter_row_paeth4_ssse3, "paeth4"},
 	};
 
+	res = 0;
+	rowp = (png_bytep)_aligned_malloc(ROWLEN + ALIGNMENT, ALIGNMENT);
+	prevrowp = (png_bytep)_aligned_malloc(ROWLEN + ALIGNMENT, ALIGNMENT);
+
 	if (!rowp || !prevrowp) {
 		res = 1;
 	} else {
 		{
-			png_byte *rowi = rowp, *prevrowi = prevrowp;
-			
+			png_bytep rowi = rowp, prevrowi = prevrowp;
+
 			srand((unsigned)time(0));
 			while(rowi <= rowp + ROWLEN + ALIGNMENT + sizeof(int)) {
 				*(int*)rowi = rand();
@@ -117,21 +157,29 @@ int main() {
 		}
 		{
 			int i, row_unalign, prevrow_unalign;
-			png_row_info info;
 			testres_t testres;
+			png_row_info info;
+
 			info.rowbytes = ROWLEN;
 
+#ifdef _WIN32
 			SetThreadAffinityMask(GetCurrentThread(), 1);
-			
+#endif
+
 			for (row_unalign = 0; row_unalign <= 1; row_unalign++) {
 				for (prevrow_unalign = 0; prevrow_unalign <= 1; prevrow_unalign++) {
 					printf("%d %d unaligned\n", row_unalign, prevrow_unalign);
+
 					for (i = 0; i < sizeof(testcases) / sizeof(testcase_t); i++) {
-						testres = performtest(info, testcases[i], rowp, prevrowp, row_unalign, prevrow_unalign);
+						testres = performtest(info, testcases[i],
+						                      rowp, prevrowp, row_unalign, prevrow_unalign);
+
 						if (testres.ok) {
-							printf("%s: %d/%dns (simd/orig)\n", testcases[i].title, testres.time1, testres.time2);
+							printf("%s: %f/%fs (simd/orig)\n",
+							       testcases[i].title, testres.simdtime, testres.origtime);
 						} else {
-							printf("%s: FAIL %d/%dns (simd/orig)\n", testcases[i].title, testres.time1, testres.time2);
+							printf("%s: FAIL %f/%fs (simd/orig)\n",
+							       testcases[i].title, testres.simdtime, testres.origtime);
 							res = 1;
 						}
 					}
@@ -139,6 +187,7 @@ int main() {
 			}
 		}
 	}
+
 	if (rowp) _aligned_free(rowp);
 	if (prevrowp) _aligned_free(prevrowp);
 	return res;
