@@ -127,8 +127,6 @@ set(pngvalid_sources
 # SSSE3 stuff
 find_program(CMAKE_ASM_NASM_COMPILER yasm)
 # TODO filter out non-x86 architectures
-# TODO fix msvc+icl pair
-# TODO enable tests on non-win32 systems
 if(CMAKE_ASM_NASM_COMPILER)
   if(NOT "${CMAKE_ASM_NASM_OBJECT_FORMAT}" MATCHES "64")
     if(WIN32)
