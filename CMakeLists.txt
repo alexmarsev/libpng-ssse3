@@ -166,7 +166,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${ZLIB_INCLUDE_DIR})
 
 if(PNG_SHARED)
   add_library(${PNG_LIB_NAME} SHARED ${libpng_sources})
-  if(MSVC)
+  if(MSVC OR (WIN32 AND "${CMAKE_C_COMPILER_ID}" STREQUAL "Intel"))
     # msvc does not append 'lib' - do it here to have consistent name
     set_target_properties(${PNG_LIB_NAME} PROPERTIES PREFIX "lib")
     set_target_properties(${PNG_LIB_NAME} PROPERTIES IMPORT_PREFIX "lib")
@@ -178,7 +178,7 @@ if(PNG_STATIC)
 # does not work without changing name
   set(PNG_LIB_NAME_STATIC ${PNG_LIB_NAME}_static)
   add_library(${PNG_LIB_NAME_STATIC} STATIC ${libpng_sources})
-  if(MSVC)
+  if(MSVC OR (WIN32 AND "${CMAKE_C_COMPILER_ID}" STREQUAL "Intel"))
     # msvc does not append 'lib' - do it here to have consistent name
     set_target_properties(${PNG_LIB_NAME_STATIC} PROPERTIES PREFIX "lib")
   endif()
@@ -260,7 +260,7 @@ if(PNG_STATIC)
   # MSVC doesn't use a different file extension for shared vs. static
   # libs.  We are able to change OUTPUT_NAME to remove the _static
   # for all other platforms.
-  if(NOT MSVC)
+  if(NOT MSVC AND NOT (WIN32 AND "${CMAKE_C_COMPILER_ID}" STREQUAL "Intel"))
     set_target_properties(${PNG_LIB_NAME_STATIC} PROPERTIES
       OUTPUT_NAME ${PNG_LIB_NAME}
       CLEAN_DIRECT_OUTPUT 1)
