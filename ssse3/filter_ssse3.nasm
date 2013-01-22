@@ -1,6 +1,6 @@
 ; filter_ssse3.nasm - SSSE3 optimised filter functions
 
-; Copyright (c) 2012 Alex Marsev
+; Copyright (c) 2012-2013 Alex Marsev
 
 ; This code is released under the libpng license.
 ; For conditions of distribution and use, see the disclaimer and license in png.h
