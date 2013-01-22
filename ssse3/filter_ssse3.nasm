@@ -18,7 +18,6 @@ avg3_step0_mask do 0xffffffffffffffffffffff0eff0cff0a
 avg4_step1_mask do 0xff06ff04ff02ff00ffffffffffffffff
 avg4_step0_mask do 0xffffffffffffffffff0eff0cff0aff08
 avg_pack_mask   do 0xffffffffffffffff0e0c0a0806040200
-paeth_pack_mask do 0xffffffffffffffffffffffff06040200
 
 section .code
 
@@ -401,7 +400,6 @@ png_read_filter_row_paeth3_ssse3:
 	init_regs
 	prep_loop 1
 
-	movdqa xmm6, [paeth_pack_mask]
 	pxor xmm7, xmm7
 	pxor xmm0, xmm0; a
 	pxor xmm2, xmm2; c
@@ -410,7 +408,7 @@ png_read_filter_row_paeth3_ssse3:
 	movd34 xmm1, edx+eax; b
 	punpcklbw xmm1, xmm7
 	paeth
-	pshufb xmm0, xmm6
+	packuswb xmm0, xmm7
 	movdqa xmm2, xmm1; c in the next iteration
 	movd34 xmm1, edi+eax; x
 	paddb xmm0, xmm1
@@ -430,7 +428,6 @@ png_read_filter_row_paeth4_ssse3:
 	init_regs
 	prep_loop 1
 
-	movdqa xmm6, [paeth_pack_mask]
 	pxor xmm7, xmm7
 	pxor xmm0, xmm0; a
 	pxor xmm2, xmm2; c
@@ -439,7 +436,7 @@ png_read_filter_row_paeth4_ssse3:
 	movd xmm1, [edx+eax]; b
 	punpcklbw xmm1, xmm7
 	paeth
-	pshufb xmm0, xmm6
+	packuswb xmm0, xmm7
 	movdqa xmm2, xmm1; c in the next iteration
 	movd xmm1, [edi+eax]; x
 	paddb xmm0, xmm1
