@@ -312,7 +312,7 @@ png_read_filter_row_avg3_ssse3:
 	add eax, 0x8
 	js .loop
 .loop_end:
-	
+
 	pop_regs
 	ret
 ;png_read_filter_row_avg3_ssse3 end
@@ -349,7 +349,7 @@ png_read_filter_row_avg4_ssse3:
 	add eax, 0x8
 	js .loop
 .loop_end:
-	
+
 	pop_regs
 	ret
 ;png_read_filter_row_avg4_ssse3 end
@@ -358,7 +358,7 @@ global png_read_filter_row_paeth3_ssse3
 
 %macro paeth 0
 	movdqa xmm3, xmm1; pa = b
-	psubw xmm3, xmm2; pa = b - c	
+	psubw xmm3, xmm2; pa = b - c
 	movdqa xmm4, xmm0; pb = a
 	psubw xmm4, xmm2; pb = a - c
 	movdqa xmm5, xmm3; pc = pa
@@ -417,7 +417,7 @@ png_read_filter_row_paeth3_ssse3:
 	add eax, 0x3
 	js .loop
 .loop_end:
-	
+
 	pop_regs
 	ret
 ;png_read_filter_row_paeth3_ssse3 end
@@ -445,7 +445,7 @@ png_read_filter_row_paeth4_ssse3:
 	add eax, 0x4
 	js .loop
 .loop_end:
-	
+
 	pop_regs
 	ret
 ;png_read_filter_row_paeth4_ssse3 end
