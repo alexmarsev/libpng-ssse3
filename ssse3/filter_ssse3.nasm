@@ -29,97 +29,113 @@ section .code
 ; 	esi - current row final barrier
 ; 	edi - current row barrier
 
+%define ptrax eax
+%define ptrbx ebx
+%define ptrcx ecx
+%define ptrdx edx
+%define ptrsi esi
+%define ptrdi edi
+%define ptrbp ebp
+%define ptrsp esp
+
+%define ptrff 0xffffffff
+
+%define offs ptrax
+%define prevrowb ptrdx
+%define rowfb ptrsi
+%define rowb ptrdi
+
 %define align_loop align 32
 
 %macro push_regs 0
-	push ebp
-	mov ebp, esp
-	push ebx
-	push edi
-	push esi
+	push ptrbp
+	mov ptrbp, ptrsp
+	push ptrbx
+	push rowb
+	push rowfb
 %endmacro
 
 %macro pop_regs 0
-	pop esi
-	pop edi
-	pop ebx
-	pop ebp
+	pop rowfb
+	pop rowb
+	pop ptrbx
+	pop ptrbp
 %endmacro
 
 %macro init_regs 0
-	mov edi, [ebp+0xc]
-	mov edx, [ebp+0x10]
-	mov esi, edi
-	mov ecx, [ebp+0x8]
-	add esi, [ecx+0x4]
+	mov rowb, [ptrbp+0xc]
+	mov prevrowb, [ptrbp+0x10]
+	mov rowfb, rowb
+	mov ptrcx, [ptrbp+0x8]
+	add rowfb, [ptrcx+0x4]
 %endmacro
 
 %macro prep_head 1; %1 - alignment
-	mov ecx, edi
-	add ecx, %1-0x1
-	and ecx, 0xffffffff-%1+0x1
-	cmp ecx, esi
+	mov ptrcx, rowb
+	add ptrcx, %1-0x1
+	and ptrcx, ptrff-%1+0x1
+	cmp ptrcx, rowfb
 	jnb .loop_end
-	mov eax, edi
-	mov edi, ecx
-	sub eax, edi
-	sub edx, eax
+	mov offs, rowb
+	mov rowb, ptrcx
+	sub offs, rowb
+	sub prevrowb, offs
 %endmacro
 
 %macro prep_loop 1; %1 - alignment
-	mov eax, edi
-	mov edi, esi
+	mov offs, rowb
+	mov rowb, rowfb
 %if %1>1
-	and edi, 0xffffffff-%1+0x1
+	and rowb, ptrff-%1+0x1
 %endif
-	sub eax, edi
+	sub offs, rowb
 	jz .loop_end
-	sub edx, eax
+	sub prevrowb, offs
 %endmacro
 
 %macro prep_tail 0
-	mov eax, edi
-	mov edi, esi
-	sub eax, edi
-	sub edx, eax
+	mov offs, rowb
+	mov rowb, rowfb
+	sub offs, rowb
+	sub prevrowb, offs
 %endmacro
 
 global png_check_cpu_for_ssse3
 png_check_cpu_for_ssse3:
-	push ebp
-	mov ebp, esp
-	push ebx
+	push ptrbp
+	mov ptrbp, ptrsp
+	push ptrbx
 
-	mov eax, 0x1
+	mov ptrax, 0x1
 	cpuid
-	mov eax, ecx
-	and eax, 0x200
+	mov ptrax, ptrcx
+	and ptrax, 0x200
 
-	pop ebx
-	pop ebp
+	pop ptrbx
+	pop ptrbp
 	ret
 ;png_check_cpu_for_ssse3 end
 
 global png_read_filter_row_up_sse2
 
 %macro eat_up_stubs 0
-	cmp eax, -0x4
+	cmp offs, -0x4
 	jnle %%eat4_end
 %%eat4:
-	movd xmm0, [edi+eax]
-	movd xmm1, [edx+eax]
+	movd xmm0, [rowb+offs]
+	movd xmm1, [prevrowb+offs]
 	paddb xmm0, xmm1
-	movd [edi+eax], xmm0
-	add eax, 0x4
-	cmp eax, -0x4
+	movd [rowb+offs], xmm0
+	add offs, 0x4
+	cmp offs, -0x4
 	jle %%eat4
 %%eat4_end:
-	cmp eax, 0x0
+	cmp offs, 0x0
 	jnl %%ret
 %%eat1:
-	mov cl, byte [edx+eax]
-	add byte [edi+eax], cl
-	add eax, 0x1
+	mov cl, byte [prevrowb+offs]
+	add byte [rowb+offs], cl
+	add offs, 0x1
 	js %%eat1
 %%ret:
 %endmacro
@@ -131,22 +147,22 @@ png_read_filter_row_up_sse2:
 	eat_up_stubs
 	prep_loop 16
 
-	test edx, 0xf
+	test prevrowb, 0xf
 	jnz .loop_unaligned
 	align_loop
 .loop_aligned:
-	movdqa xmm0, [edi+eax]
-	paddb xmm0, [edx+eax]
-	movdqa [edi+eax], xmm0
-	add eax, 0x10
+	movdqa xmm0, [rowb+offs]
+	paddb xmm0, [prevrowb+offs]
+	movdqa [rowb+offs], xmm0
+	add offs, 0x10
 	js .loop_aligned
 	jmp short .loop_end
 	align_loop
 .loop_unaligned:
-	movdqu xmm0, [edx+eax]
-	paddb xmm0, [edi+eax]
-	movdqa [edi+eax], xmm0
-	add eax, 0x10
+	movdqu xmm0, [prevrowb+offs]
+	paddb xmm0, [rowb+offs]
+	movdqa [rowb+offs], xmm0
+	add offs, 0x10
 	js .loop_unaligned
 .loop_end:
 
@@ -159,18 +175,18 @@ png_read_filter_row_up_sse2:
 global png_read_filter_row_sub3_ssse3
 
 %macro eat_sub3_stubs 0
-	cmp eax, 0x0
+	cmp offs, 0x0
 	jnl %%ret
 	movd ecx, xmm0
 	and ecx, 0x00ffffff
 %%eat1:
-	add cl, [edi+eax]
+	add cl, [rowb+offs]
 	movzx ebx, cl
-	mov [edi+eax], cl
+	mov [rowb+offs], cl
 	shl ebx, 16
 	shr ecx, 8
 	or ecx, ebx 
-	add eax, 0x1
+	add offs, 0x1
 	js %%eat1
 	movd xmm0, ecx
 %%ret:
@@ -189,7 +205,7 @@ png_read_filter_row_sub3_ssse3:
 	pshufb xmm0, xmm2
 	align_loop
 .loop:
-	movdqa xmm1, [edi+eax]
+	movdqa xmm1, [rowb+offs]
 	paddb xmm0, xmm1
 	pslldq xmm1, 3
 	paddb xmm0, xmm1
@@ -201,9 +217,9 @@ png_read_filter_row_sub3_ssse3:
 	paddb xmm0, xmm1
 	pslldq xmm1, 3
 	paddb xmm0, xmm1
-	movdqa [edi+eax], xmm0
+	movdqa [rowb+offs], xmm0
 	pshufb xmm0, xmm2
-	add eax, 0x10
+	add offs, 0x10
 	js .loop
 .loop_end:
 
@@ -216,27 +232,27 @@ png_read_filter_row_sub3_ssse3:
 global png_read_filter_row_sub4_ssse3
 
 %macro eat_sub4_stubs 0
-	cmp eax, -0x4
+	cmp offs, -0x4
 	jnle %%eat4_end
 %%eat4:
-	movd xmm1, [edi+eax]
+	movd xmm1, [rowb+offs]
 	paddb xmm0, xmm1
-	movd [edi+eax], xmm0
-	add eax, 0x4
-	cmp eax, -0x4
+	movd [rowb+offs], xmm0
+	add offs, 0x4
+	cmp offs, -0x4
 	jle %%eat4
 %%eat4_end:
-	cmp eax, 0x0
+	cmp offs, 0x0
 	jnl %%ret
 	movd ecx, xmm0
 %%eat1:
-	add cl, [edi+eax]
+	add cl, [rowb+offs]
 	movzx ebx, cl
-	mov [edi+eax], cl
+	mov [rowb+offs], cl
 	shl ebx, 24
 	shr ecx, 8
 	or ecx, ebx
-	add eax, 0x1
+	add offs, 0x1
 	js %%eat1
 	movd xmm0, ecx
 %%ret:
@@ -255,7 +271,7 @@ png_read_filter_row_sub4_ssse3:
 	pshufb xmm0, xmm2
 	align_loop
 .loop:
-	movdqa xmm1, [edi+eax]
+	movdqa xmm1, [rowb+offs]
 	paddb xmm0, xmm1
 	pslldq xmm1, 4
 	paddb xmm0, xmm1
@@ -263,9 +279,9 @@ png_read_filter_row_sub4_ssse3:
 	paddb xmm0, xmm1
 	pslldq xmm1, 4
 	paddb xmm0, xmm1
-	movdqa [edi+eax], xmm0
+	movdqa [rowb+offs], xmm0
 	pshufb xmm0, xmm2
-	add eax, 0x10
+	add offs, 0x10
 	js .loop
 .loop_end:
 
@@ -289,12 +305,12 @@ png_read_filter_row_avg3_ssse3:
 	movdqa xmm5, [avg3_step0_mask]
 	align_loop
 .loop:
-	movq xmm1, [edi+eax]
+	movq xmm1, [rowb+offs]
 	punpcklbw xmm1, xmm7
-	movq xmm2, [edx+eax]
+	movq xmm2, [prevrowb+offs]
 	punpcklbw xmm2, xmm7
 	paddw xmm1, xmm1
-	paddw xmm2, xmm0; prevrow + prevpixel
+	paddw xmm2, xmm0; prevrowb + prevpixel
 	paddw xmm1, xmm2
 	movdqa xmm0, xmm1
 	psrlw xmm0, 1
@@ -307,9 +323,9 @@ png_read_filter_row_avg3_ssse3:
 	psrlw xmm1, 1
 	movdqa xmm0, xmm1; prevpixel in the next iteration
 	pshufb xmm1, xmm6
-	movq [edi+eax], xmm1
+	movq [rowb+offs], xmm1
 	pshufb xmm0, xmm5
-	add eax, 0x8
+	add offs, 0x8
 	js .loop
 .loop_end:
 
@@ -330,12 +346,12 @@ png_read_filter_row_avg4_ssse3:
 	movdqa xmm4, [avg4_step0_mask]
 	align_loop
 .loop:
-	movq xmm1, [edi+eax]
+	movq xmm1, [rowb+offs]
 	punpcklbw xmm1, xmm7
-	movq xmm2, [edx+eax]
+	movq xmm2, [prevrowb+offs]
 	punpcklbw xmm2, xmm7
 	paddw xmm1, xmm1
-	paddw xmm2, xmm0; prevrow + prevpixel
+	paddw xmm2, xmm0; prevrowb + prevpixel
 	paddw xmm1, xmm2
 	movdqa xmm0, xmm1
 	psrlw xmm0, 1
@@ -344,9 +360,9 @@ png_read_filter_row_avg4_ssse3:
 	psrlw xmm1, 1
 	movdqa xmm0, xmm1; prevpixel in the next iteration
 	pshufb xmm1, xmm6
-	movq [edi+eax], xmm1
+	movq [rowb+offs], xmm1
 	pshufb xmm0, xmm4
-	add eax, 0x8
+	add offs, 0x8
 	js .loop
 .loop_end:
 
@@ -405,16 +421,16 @@ png_read_filter_row_paeth3_ssse3:
 	pxor xmm2, xmm2; c
 	align_loop
 .loop:
-	movd34 xmm1, edx+eax; b
+	movd34 xmm1, prevrowb+offs; b
 	punpcklbw xmm1, xmm7
 	paeth
 	packuswb xmm0, xmm7
 	movdqa xmm2, xmm1; c in the next iteration
-	movd34 xmm1, edi+eax; x
+	movd34 xmm1, rowb+offs; x
 	paddb xmm0, xmm1
-	movd43 edi+eax, xmm0
+	movd43 rowb+offs, xmm0
 	punpcklbw xmm0, xmm7; a in the next iteration
-	add eax, 0x3
+	add offs, 0x3
 	js .loop
 .loop_end:
 
@@ -433,16 +449,16 @@ png_read_filter_row_paeth4_ssse3:
 	pxor xmm2, xmm2; c
 	align_loop
 .loop:
-	movd xmm1, [edx+eax]; b
+	movd xmm1, [prevrowb+offs]; b
 	punpcklbw xmm1, xmm7
 	paeth
 	packuswb xmm0, xmm7
 	movdqa xmm2, xmm1; c in the next iteration
-	movd xmm1, [edi+eax]; x
+	movd xmm1, [rowb+offs]; x
 	paddb xmm0, xmm1
-	movd [edi+eax], xmm0
+	movd [rowb+offs], xmm0
 	punpcklbw xmm0, xmm7; a in the next iteration
-	add eax, 0x4
+	add offs, 0x4
 	js .loop
 .loop_end:
 
