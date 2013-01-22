@@ -142,46 +142,37 @@ int main() {
 	if (!rowp || !prevrowp) {
 		res = 1;
 	} else {
-		{
-			png_bytep rowi = rowp, prevrowi = prevrowp;
+		int i, row_unalign, prevrow_unalign;
+		testres_t testres;
+		png_row_info info;
 
-			srand((unsigned)time(0));
-			while(rowi <= rowp + ROWLEN + ALIGNMENT + sizeof(int)) {
-				*(int*)rowi = rand();
-				rowi += sizeof(int);
-			}
-			while(prevrowi <= prevrowp + ROWLEN + ALIGNMENT + sizeof(int)) {
-				*(int*)prevrowi = rand();
-				prevrowi += sizeof(int);
-			}
+		srand((unsigned)time(0));
+		for (i = 0; i < (ROWLEN + ALIGNMENT) / sizeof(i); i++) {
+			*(int*)(rowp + i * sizeof(i)) = rand();
+			*(int*)(prevrowp + i * sizeof(i)) = rand();
 		}
-		{
-			int i, row_unalign, prevrow_unalign;
-			testres_t testres;
-			png_row_info info;
 
-			info.rowbytes = ROWLEN;
+		info.rowbytes = ROWLEN;
 
 #ifdef _WIN32
-			SetThreadAffinityMask(GetCurrentThread(), 1);
+		SetThreadAffinityMask(GetCurrentThread(), 1);
 #endif
 
-			for (row_unalign = 0; row_unalign <= 1; row_unalign++) {
-				for (prevrow_unalign = 0; prevrow_unalign <= 1; prevrow_unalign++) {
-					printf("%d %d unaligned\n", row_unalign, prevrow_unalign);
+		for (row_unalign = 0; row_unalign <= 1; row_unalign++) {
+			for (prevrow_unalign = 0; prevrow_unalign <= 1; prevrow_unalign++) {
+				printf("%d %d unaligned\n", row_unalign, prevrow_unalign);
 
-					for (i = 0; i < sizeof(testcases) / sizeof(testcase_t); i++) {
-						testres = performtest(info, testcases[i],
-						                      rowp, prevrowp, row_unalign, prevrow_unalign);
+				for (i = 0; i < sizeof(testcases) / sizeof(testcase_t); i++) {
+					testres = performtest(info, testcases[i],
+					                      rowp, prevrowp, row_unalign, prevrow_unalign);
 
-						if (testres.ok) {
-							printf("%s: %f/%fs (simd/orig)\n",
-							       testcases[i].title, testres.simdtime, testres.origtime);
-						} else {
-							printf("%s: FAIL %f/%fs (simd/orig)\n",
-							       testcases[i].title, testres.simdtime, testres.origtime);
-							res = 1;
-						}
+					if (testres.ok) {
+						printf("%s: %f/%fs (simd/orig)\n",
+						       testcases[i].title, testres.simdtime, testres.origtime);
+					} else {
+						printf("%s: FAIL %f/%fs (simd/orig)\n",
+						       testcases[i].title, testres.simdtime, testres.origtime);
+						res = 1;
 					}
 				}
 			}
