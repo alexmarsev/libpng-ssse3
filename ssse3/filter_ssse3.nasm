@@ -29,6 +29,21 @@ section .code
 ; 	esi - current row final barrier
 ; 	edi - current row barrier
 
+%ifdef __x86_64__
+
+default rel
+
+%define ptrax rax
+%define ptrbx rbx
+%define ptrcx rcx
+%define ptrdx rdx
+%define ptrsi rsi
+%define ptrdi rdi
+%define ptrbp rbp
+%define ptrsp rsp
+
+%else
+
 %define ptrax eax
 %define ptrbx ebx
 %define ptrcx ecx
@@ -38,7 +53,7 @@ section .code
 %define ptrbp ebp
 %define ptrsp esp
 
-%define ptrff 0xffffffff
+%endif
 
 %define offs ptrax
 %define prevrowb ptrdx
@@ -51,29 +66,65 @@ section .code
 	push ptrbp
 	mov ptrbp, ptrsp
 	push ptrbx
-	push rowb
-	push rowfb
+%ifdef __x86_64__
+%ifdef _WINDOWS
+	push ptrdi
+	push ptrsi
+	sub ptrsp, 0x20
+	movdqu [rsp], xmm6
+	movdqu [rsp+0x10], xmm7
+%endif
+%else
+	push ptrdi
+	push ptrsi
+%endif
 %endmacro
 
 %macro pop_regs 0
-	pop rowfb
-	pop rowb
+%ifdef __x86_64__
+%ifdef _WINDOWS
+	movdqu xmm7, [rsp+0x10]
+	movdqu xmm6, [rsp]
+	add ptrsp, 0x20
+	pop ptrsi
+	pop ptrdi
+%endif
+%else
+	pop ptrsi
+	pop ptrdi
+%endif
 	pop ptrbx
 	pop ptrbp
 %endmacro
 
 %macro init_regs 0
+%ifdef __x86_64__
+%ifdef _WINDOWS
+	mov rowb, ptrdx
+	mov prevrowb, r8
+	mov rowfb, rowb
+	add rowfb, [ptrcx+0x8]
+%else
+	mov ptrcx, ptrdi
+	mov rowb, ptrsi
+	mov rowfb, rowb
+	add rowfb, [ptrcx+0x8]
+%endif
+%else
 	mov rowb, [ptrbp+0xc]
 	mov prevrowb, [ptrbp+0x10]
 	mov rowfb, rowb
 	mov ptrcx, [ptrbp+0x8]
 	add rowfb, [ptrcx+0x4]
+%endif
 %endmacro
 
 %macro prep_head 1; %1 - alignment
 	mov ptrcx, rowb
 	add ptrcx, %1-0x1
-	and ptrcx, ptrff-%1+0x1
+	xor ptrbx, ptrbx
+	sub ptrbx, %1
+	and ptrcx, ptrbx
 	cmp ptrcx, rowfb
 	jnb .loop_end
 	mov offs, rowb
@@ -86,7 +137,9 @@ section .code
 	mov offs, rowb
 	mov rowb, rowfb
 %if %1>1
-	and rowb, ptrff-%1+0x1
+	xor ptrbx, ptrbx
+	sub ptrbx, %1
+	and rowb, ptrbx
 %endif
 	sub offs, rowb
 	jz .loop_end
