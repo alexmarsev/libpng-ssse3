@@ -21,14 +21,6 @@ avg_pack_mask   do 0xffffffffffffffff0e0c0a0806040200
 
 section .code
 
-; Registers' usage:
-; 	eax - offset (negative)
-; 	ebx - multipurpose
-; 	ecx - multipurpose
-; 	edx - previous row barrier
-; 	esi - current row final barrier
-; 	edi - current row barrier
-
 %ifdef __x86_64__
 
 default rel
@@ -55,10 +47,12 @@ default rel
 
 %endif
 
-%define offs ptrax
-%define prevrowb ptrdx
-%define rowfb ptrsi
-%define rowb ptrdi
+%define offs ptrax ; offset (negative)
+%define prevrowb ptrdx ; previous row barrier
+%define rowfb ptrsi ; current row final barrier
+%define rowb ptrdi ; current row barrier
+; ptrbx - multipurpose
+; ptrcx - multipurpose
 
 %define align_loop align 32
 
