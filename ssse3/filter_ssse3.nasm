@@ -62,15 +62,15 @@ default rel
 	push ptrbx
 %ifdef __x86_64__
 %ifdef _WINDOWS
-	push ptrdi
-	push ptrsi
-	sub ptrsp, 0x20
+	push rdi
+	push rsi
+	sub rsp, 0x20
 	movdqu [rsp], xmm6
 	movdqu [rsp+0x10], xmm7
 %endif
 %else
-	push ptrdi
-	push ptrsi
+	push edi
+	push esi
 %endif
 %endmacro
 
@@ -79,13 +79,13 @@ default rel
 %ifdef _WINDOWS
 	movdqu xmm7, [rsp+0x10]
 	movdqu xmm6, [rsp]
-	add ptrsp, 0x20
-	pop ptrsi
-	pop ptrdi
+	add rsp, 0x20
+	pop rsi
+	pop rdi
 %endif
 %else
-	pop ptrsi
-	pop ptrdi
+	pop esi
+	pop edi
 %endif
 	pop ptrbx
 	pop ptrbp
@@ -94,22 +94,22 @@ default rel
 %macro init_regs 0
 %ifdef __x86_64__
 %ifdef _WINDOWS
-	mov rowb, ptrdx
+	mov rowb, rdx
 	mov prevrowb, r8
 	mov rowfb, rowb
-	add rowfb, [ptrcx+0x8]
+	add rowfb, [rcx+0x8]
 %else
-	mov ptrcx, ptrdi
-	mov rowb, ptrsi
+	mov rcx, rdi
+	mov rowb, rsi
 	mov rowfb, rowb
-	add rowfb, [ptrcx+0x8]
+	add rowfb, [rcx+0x8]
 %endif
 %else
-	mov rowb, [ptrbp+0xc]
-	mov prevrowb, [ptrbp+0x10]
+	mov rowb, [ebp+0xc]
+	mov prevrowb, [ebp+0x10]
 	mov rowfb, rowb
-	mov ptrcx, [ptrbp+0x8]
-	add rowfb, [ptrcx+0x4]
+	mov ptrcx, [ebp+0x8]
+	add rowfb, [ecx+0x4]
 %endif
 %endmacro
 
