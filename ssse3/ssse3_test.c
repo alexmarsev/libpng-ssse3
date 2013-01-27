@@ -147,9 +147,9 @@ int main() {
 		png_row_info info;
 
 		srand((unsigned)time(0));
-		for (i = 0; i < (ROWLEN + ALIGNMENT) / sizeof(i); i++) {
-			*(int*)(rowp + i * sizeof(i)) = rand();
-			*(int*)(prevrowp + i * sizeof(i)) = rand();
+		for (i = 0; i < (ROWLEN + ALIGNMENT) / sizeof(int); i++) {
+			*(int*)(rowp + i * sizeof(int)) = rand();
+			*(int*)(prevrowp + i * sizeof(int)) = rand();
 		}
 
 		info.rowbytes = ROWLEN;
