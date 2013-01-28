@@ -409,7 +409,7 @@ global png_read_filter_row_paeth3_ssse3
 	por xmm0, xmm3; res |= c & !tmp_mask
 %endmacro
 
-%macro movd34 2
+%macro mov34 2
 	movzx ebx, word [%2]
 	movzx ecx, byte [%2+2]
 	shl ecx, 16
@@ -417,7 +417,7 @@ global png_read_filter_row_paeth3_ssse3
 	movd %1, ebx
 %endmacro
 
-%macro movd43 2
+%macro mov43 2
 	movd ebx, %2
 	mov [%1], bx
 	shr ebx, 16
@@ -433,14 +433,14 @@ png_read_filter_row_paeth3_ssse3:
 	pxor xmm2, xmm2; c
 	align_loop
 .loop:
-	movd34 xmm1, prevrowb+offs; b
+	mov34 xmm1, prevrowb+offs; b
 	punpcklbw xmm1, xmm7
 	paeth
 	packuswb xmm0, xmm7
 	movdqa xmm2, xmm1; c in the next iteration
-	movd34 xmm1, rowb+offs; x
+	mov34 xmm1, rowb+offs; x
 	paddb xmm0, xmm1
-	movd43 rowb+offs, xmm0
+	mov43 rowb+offs, xmm0
 	punpcklbw xmm0, xmm7; a in the next iteration
 	add offs, 0x3
 	js .loop
@@ -477,14 +477,14 @@ png_read_filter_row_paeth4_ssse3:
 
 global png_read_filter_row_paeth6_ssse3
 
-%macro movq68 2
+%macro mov68 2
 	movd %1, [%2]
 	movzx ebx, word [%2+4]
 	movd xmm6, ebx
 	punpckldq %1, xmm6
 %endmacro
 
-%macro movq86 2
+%macro mov86 2
 	movd [%1], %2
 	movdqa xmm6, %2
 	psrldq xmm6, 4
@@ -501,14 +501,14 @@ png_read_filter_row_paeth6_ssse3:
 	pxor xmm2, xmm2; c
 	align_loop
 .loop:
-	movq68 xmm1, prevrowb+offs; b
+	mov68 xmm1, prevrowb+offs; b
 	punpcklbw xmm1, xmm7
 	paeth
 	packuswb xmm0, xmm7
 	movdqa xmm2, xmm1; c in the next iteration
-	movq68 xmm1, rowb+offs; x
+	mov68 xmm1, rowb+offs; x
 	paddb xmm0, xmm1
-	movq86 rowb+offs, xmm0
+	mov86 rowb+offs, xmm0
 	punpcklbw xmm0, xmm7; a in the next iteration
 	add offs, 0x6
 	js .loop
