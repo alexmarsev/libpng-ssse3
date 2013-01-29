@@ -75,16 +75,12 @@ double timetest(pngfilterfunc func, png_row_infop infop, png_bytep rowp, png_con
 	return res;
 }
 
-testres_t performtest(png_row_info info, testcase_t testcase,
-                      png_const_bytep rowp, png_const_bytep prevrowp, int row_unalign, int prevrow_unalign)
-{
+testres_t performtest(png_row_info info, testcase_t testcase, png_const_bytep rowp, png_const_bytep prevrowp) {
 	testres_t testres;
 	double simdtime[TRIES], origtime[TRIES];
 	png_bytep workrow1, workrow2;
 	int i;
 
-	row_unalign %= ALIGNMENT;
-	prevrow_unalign %= ALIGNMENT;
 	info.pixel_depth = testcase.bpp;
 	info.width = info.rowbytes / info.pixel_depth;
 
@@ -95,15 +91,13 @@ testres_t performtest(png_row_info info, testcase_t testcase,
 		testres.origtime = -1;
 		testres.ok = -1;
 	} else {
-		memcpy(workrow1, rowp, ROWLEN + ALIGNMENT);
+		memcpy(workrow1, rowp, ROWLEN);
 		for (i = 0; i < TRIES; i++)
-			simdtime[i] = timetest(testcase.simdfunc, &info,
-			                       workrow1 + row_unalign, prevrowp + prevrow_unalign);
+			simdtime[i] = timetest(testcase.simdfunc, &info, workrow1, prevrowp);
 
-		memcpy(workrow2, rowp, ROWLEN + ALIGNMENT);
+		memcpy(workrow2, rowp, ROWLEN);
 		for (i = 0; i < TRIES; i++)
-			origtime[i] = timetest(testcase.origfunc, &info,
-			                       workrow2 + row_unalign, prevrowp + prevrow_unalign);
+			origtime[i] = timetest(testcase.origfunc, &info, workrow2, prevrowp);
 
 		testres.simdtime = simdtime[0];
 		testres.origtime = origtime[0];
@@ -112,7 +106,7 @@ testres_t performtest(png_row_info info, testcase_t testcase,
 			if (origtime[i] < testres.origtime) testres.origtime = origtime[i];
 		}
 
-		testres.ok = !memcmp(workrow1, workrow2, ROWLEN + ALIGNMENT);
+		testres.ok = !memcmp(workrow1, workrow2, ROWLEN);
 	}
 
 	if (workrow1) _aligned_free(workrow1);
@@ -148,7 +142,7 @@ int main() {
 	if (!rowp || !prevrowp) {
 		res = 1;
 	} else {
-		int i, row_unalign, prevrow_unalign;
+		int i;
 		testres_t testres;
 		png_row_info info;
 
@@ -164,23 +158,16 @@ int main() {
 		SetThreadAffinityMask(GetCurrentThread(), 1);
 #endif
 
-		for (row_unalign = 0; row_unalign <= 1; row_unalign++) {
-			for (prevrow_unalign = 0; prevrow_unalign <= 1; prevrow_unalign++) {
-				printf("%d %d unaligned\n", row_unalign, prevrow_unalign);
+		for (i = 0; i < sizeof(testcases) / sizeof(testcase_t); i++) {
+			testres = performtest(info, testcases[i], rowp, prevrowp);
 
-				for (i = 0; i < sizeof(testcases) / sizeof(testcase_t); i++) {
-					testres = performtest(info, testcases[i],
-					                      rowp, prevrowp, row_unalign, prevrow_unalign);
-
-					if (testres.ok) {
-						printf("%s: %f/%fs (simd/orig)\n",
-						       testcases[i].title, testres.simdtime, testres.origtime);
-					} else {
-						printf("%s: FAIL %f/%fs (simd/orig)\n",
-						       testcases[i].title, testres.simdtime, testres.origtime);
-						res = 1;
-					}
-				}
+			if (testres.ok) {
+				printf("%s: %f/%fs (simd/orig)\n",
+				       testcases[i].title, testres.simdtime, testres.origtime);
+			} else {
+				printf("%s: FAIL %f/%fs (simd/orig)\n",
+				       testcases[i].title, testres.simdtime, testres.origtime);
+				res = 1;
 			}
 		}
 	}

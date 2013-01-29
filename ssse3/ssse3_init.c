@@ -6,6 +6,7 @@
  * For conditions of distribution and use, see the disclaimer
  * and license in png.h
  */
+#ifdef PNG_ALIGNED_MEMORY_SUPPORTED
 #include "../pngpriv.h"
 
 void png_init_filter_functions_ssse3(png_structp pp, unsigned int bpp) {
@@ -22,3 +23,5 @@ void png_init_filter_functions_ssse3(png_structp pp, unsigned int bpp) {
 		}
 	}
 }
+
+#endif

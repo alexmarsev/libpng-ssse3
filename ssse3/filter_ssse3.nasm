@@ -5,8 +5,6 @@
 ; This code is released under the libpng license.
 ; For conditions of distribution and use, see the disclaimer and license in png.h
 
-; TODO write separate functions for <16byte inputs (up, sub, avg)
-
 cpu intelnop
 
 section .data
@@ -135,10 +133,9 @@ png_read_filter_row_up_sse2:
 
 	align_loop
 .loop:
-	movdqu xmm0, [rowb+offs]
-	movdqu xmm1, [prevrowb+offs]
-	paddb xmm0, xmm1
-	movdqu [rowb+offs], xmm0
+	movdqa xmm0, [prevrowb+offs]
+	paddb xmm0, [rowb+offs]
+	movdqa [rowb+offs], xmm0
 	add offs, 0x10
 	js .loop
 
@@ -155,7 +152,7 @@ png_read_filter_row_sub3_ssse3:
 	movdqa xmm2, [sub3_fill_mask]
 	align_loop
 .loop:
-	movdqu xmm1, [rowb+offs]
+	movdqa xmm1, [rowb+offs]
 	paddb xmm0, xmm1
 	pslldq xmm1, 3
 	paddb xmm0, xmm1
@@ -167,7 +164,7 @@ png_read_filter_row_sub3_ssse3:
 	paddb xmm0, xmm1
 	pslldq xmm1, 3
 	paddb xmm0, xmm1
-	movdqu [rowb+offs], xmm0
+	movdqa [rowb+offs], xmm0
 	pshufb xmm0, xmm2
 	add offs, 0x10
 	js .loop
@@ -185,7 +182,7 @@ png_read_filter_row_sub4_ssse3:
 	movdqa xmm2, [sub4_fill_mask]
 	align_loop
 .loop:
-	movdqu xmm1, [rowb+offs]
+	movdqa xmm1, [rowb+offs]
 	paddb xmm0, xmm1
 	pslldq xmm1, 4
 	paddb xmm0, xmm1
@@ -193,7 +190,7 @@ png_read_filter_row_sub4_ssse3:
 	paddb xmm0, xmm1
 	pslldq xmm1, 4
 	paddb xmm0, xmm1
-	movdqu [rowb+offs], xmm0
+	movdqa [rowb+offs], xmm0
 	pshufb xmm0, xmm2
 	add offs, 0x10
 	js .loop
@@ -211,13 +208,13 @@ png_read_filter_row_sub6_ssse3:
 	movdqa xmm2, [sub6_fill_mask]
 	align_loop
 .loop:
-	movdqu xmm1, [rowb+offs]
+	movdqa xmm1, [rowb+offs]
 	paddb xmm0, xmm1
 	pslldq xmm1, 6
 	paddb xmm0, xmm1
 	pslldq xmm1, 6
 	paddb xmm0, xmm1
-	movdqu [rowb+offs], xmm0
+	movdqa [rowb+offs], xmm0
 	pshufb xmm0, xmm2
 	add offs, 0x10
 	js .loop
@@ -235,11 +232,11 @@ png_read_filter_row_sub8_ssse3:
 	movdqa xmm2, [sub8_fill_mask]
 	align_loop
 .loop:
-	movdqu xmm1, [rowb+offs]
+	movdqa xmm1, [rowb+offs]
 	paddb xmm0, xmm1
 	pslldq xmm1, 8
 	paddb xmm0, xmm1
-	movdqu [rowb+offs], xmm0
+	movdqa [rowb+offs], xmm0
 	pshufb xmm0, xmm2
 	add offs, 0x10
 	js .loop
