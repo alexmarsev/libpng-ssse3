@@ -199,15 +199,37 @@ AC_ARG_ENABLE([arm-neon],
 	fi])
 AM_CONDITIONAL([PNG_ARM_NEON], [test "${enable_arm_neon:-no}" = yes])
 
-# TODO: fire some error when enabling both neon and ssse3?
 AC_ARG_ENABLE([ssse3],
 	AC_HELP_STRING([--enable-ssse3], [Enable SSSE3 optimizations]),
 	[if test "${enableval}" = yes; then
+		if test "${enable_arm_neon}" = yes; then
+			AC_ERROR([unable to use both ARM NEON and SSSE3 at the same time])
+		fi
 		AC_CHECK_PROGS(YASM, yasm)
 		if test -z "$YASM"; then
 			AC_ERROR([could not find yasm])
 		fi
-		# TODO: YASMFLAGS
+		case "$host_os" in
+			mingw* | cygwin* | interix*)
+				case "$host_cpu" in
+					i?86) YASMFLAGS='-fwin32 -D_WINDOWS --prefix=_';;
+					x86_64) YASMFLAGS='-fwin64 -D_WINDOWS -D__x86_64__';;
+					*) AC_ERROR([unable to use SSSE3 on $host]);;
+				esac;;
+			linux* | *bsd* | solaris*)
+				case "$host_cpu" in
+					i?86) YASMFLAGS='-felf32';;
+					x86_64) YASMFLAGS='-felf64 -D__x86_64__';;
+					*) AC_ERROR([unable to use SSSE3 on $host]);;
+				esac;;
+			darwin*)
+				case "$host_cpu" in
+					i?86) YASMFLAGS='-fmacho32';;
+					x86_64) YASMFLAGS='-fmacho64 -D__x86_64__';;
+					*) AC_ERROR([unable to use SSSE3 on $host]);;
+				esac;;
+			*) AC_ERROR([unable to use SSSE3 on $host]);;
+		esac
 		AC_DEFINE([PNG_FILTER_OPTIMIZATIONS],
                           [png_init_filter_functions_ssse3],
                           [SSSE3 filter initialization function])
