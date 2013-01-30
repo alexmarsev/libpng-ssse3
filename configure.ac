@@ -199,6 +199,23 @@ AC_ARG_ENABLE([arm-neon],
 	fi])
 AM_CONDITIONAL([PNG_ARM_NEON], [test "${enable_arm_neon:-no}" = yes])
 
+# TODO: fire some error when enabling both neon and ssse3?
+AC_ARG_ENABLE([ssse3],
+	AC_HELP_STRING([--enable-ssse3], [Enable SSSE3 optimizations]),
+	[if test "${enableval}" = yes; then
+		AC_CHECK_PROGS(YASM, yasm)
+		if test -z "$YASM"; then
+			AC_ERROR([could not find yasm])
+		fi
+		# TODO: YASMFLAGS
+		AC_DEFINE([PNG_FILTER_OPTIMIZATIONS],
+                          [png_init_filter_functions_ssse3],
+                          [SSSE3 filter initialization function])
+		AC_DEFINE([PNG_ALIGNED_MEMORY_SUPPORTED], [1],
+                          [Align row buffers])
+	fi])
+AM_CONDITIONAL([PNG_X86_SSSE3], [test "${enable_ssse3:-no}" = yes])
+
 # Config files, substituting as above
 AC_CONFIG_FILES([Makefile libpng.pc:libpng.pc.in])
 AC_CONFIG_FILES([libpng-config:libpng-config.in],
