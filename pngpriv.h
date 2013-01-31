@@ -1012,6 +1012,8 @@ PNG_EXTERN void png_read_filter_row_paeth4_neon PNGARG((png_row_infop row_info,
 PNG_EXTERN int png_check_cpu_for_ssse3();
 PNG_EXTERN void png_read_filter_row_up_sse2 PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));
+PNG_EXTERN void png_read_filter_row_sub2_ssse3 PNGARG((png_row_infop row_info,
+    png_bytep row, png_const_bytep prev_row));
 PNG_EXTERN void png_read_filter_row_sub3_ssse3 PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));
 PNG_EXTERN void png_read_filter_row_sub4_ssse3 PNGARG((png_row_infop row_info,
@@ -1020,6 +1022,8 @@ PNG_EXTERN void png_read_filter_row_sub6_ssse3 PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));
 PNG_EXTERN void png_read_filter_row_sub8_ssse3 PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));
+PNG_EXTERN void png_read_filter_row_avg2_sse2 PNGARG((png_row_infop row_info,
+    png_bytep row, png_const_bytep prev_row));
 PNG_EXTERN void png_read_filter_row_avg3_ssse3 PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));
 PNG_EXTERN void png_read_filter_row_avg4_ssse3 PNGARG((png_row_infop row_info,
@@ -1027,6 +1031,8 @@ PNG_EXTERN void png_read_filter_row_avg4_ssse3 PNGARG((png_row_infop row_info,
 PNG_EXTERN void png_read_filter_row_avg6_ssse3 PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));
 PNG_EXTERN void png_read_filter_row_avg8_sse2 PNGARG((png_row_infop row_info,
+    png_bytep row, png_const_bytep prev_row));
+PNG_EXTERN void png_read_filter_row_paeth2_ssse3 PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));
 PNG_EXTERN void png_read_filter_row_paeth3_ssse3 PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));

@@ -10,10 +10,13 @@ cpu intelnop
 section .data
 
 align 16
+sub2_fill_mask  do 0x0f0e0f0e0f0e0f0e0f0e0f0e0f0e0f0e
 sub3_fill_mask  do 0x0d0f0e0d0f0e0d0f0e0d0f0e0d0f0e0d
 sub4_fill_mask  do 0x0f0e0d0c0f0e0d0c0f0e0d0c0f0e0d0c
 sub6_fill_mask  do 0x0d0c0b0a0f0e0d0c0b0a0f0e0d0c0b0a
 sub8_fill_mask  do 0x0f0e0d0c0b0a09080f0e0d0c0b0a0908
+avg2_step1_mask do 0xffffffffffffffffff02ff00ffffffff
+avg2_step0_mask do 0xffffffffffffffffffffffffff06ff04
 avg3_step1_mask do 0xffffffffff04ff02ff00ffffffffffff
 avg3_step2_mask do 0xff08ff06ffffffffffffffffffffffff
 avg3_step0_mask do 0xffffffffffffffffffffff0eff0cff0a
@@ -143,6 +146,40 @@ png_read_filter_row_up_sse2:
 	ret
 ;png_read_filter_row_up_sse2 end
 
+global png_read_filter_row_sub2_ssse3
+png_read_filter_row_sub2_ssse3:
+	push_regs
+	init_regs
+
+	pxor xmm0, xmm0
+	movdqa xmm2, [sub2_fill_mask]
+	align_loop
+.loop:
+	movdqa xmm1, [rowb+offs]
+	paddb xmm0, xmm1
+	pslldq xmm1, 2
+	paddb xmm0, xmm1
+	pslldq xmm1, 2
+	paddb xmm0, xmm1
+	pslldq xmm1, 2
+	paddb xmm0, xmm1
+	pslldq xmm1, 2
+	paddb xmm0, xmm1
+	pslldq xmm1, 2
+	paddb xmm0, xmm1
+	pslldq xmm1, 2
+	paddb xmm0, xmm1
+	pslldq xmm1, 2
+	paddb xmm0, xmm1
+	movdqa [rowb+offs], xmm0
+	pshufb xmm0, xmm2
+	add offs, 0x10
+	js .loop
+
+	pop_regs
+	ret
+;png_read_filter_row_sub2_ssse3 end
+
 global png_read_filter_row_sub3_ssse3
 png_read_filter_row_sub3_ssse3:
 	push_regs
@@ -244,6 +281,41 @@ png_read_filter_row_sub8_ssse3:
 	pop_regs
 	ret
 ;png_read_filter_row_sub8_ssse3 end
+
+global png_read_filter_row_avg2_sse2
+png_read_filter_row_avg2_sse2:
+	push_regs
+	init_regs
+
+	pxor xmm7, xmm7
+	pxor xmm0, xmm0; prevpixel
+	movdqa xmm6, [avg_pack_mask]
+	movdqa xmm3, [avg2_step1_mask]
+	movdqa xmm4, [avg2_step0_mask]
+	align_loop
+.loop:
+	movd xmm1, [rowb+offs]
+	punpcklbw xmm1, xmm7
+	movd xmm2, [prevrowb+offs]
+	punpcklbw xmm2, xmm7
+	paddw xmm1, xmm1
+	paddw xmm2, xmm0; prevrowb + prevpixel
+	paddw xmm1, xmm2
+	movdqa xmm0, xmm1
+	psrlw xmm0, 1
+	pshufb xmm0, xmm3
+	paddw xmm1, xmm0
+	psrlw xmm1, 1
+	movdqa xmm0, xmm1; prevpixel in the next iteration
+	pshufb xmm1, xmm6
+	movd [rowb+offs], xmm1
+	pshufb xmm0, xmm4
+	add offs, 0x4
+	js .loop
+
+	pop_regs
+	ret
+;png_read_filter_row_avg2_sse2 end
 
 global png_read_filter_row_avg3_ssse3
 png_read_filter_row_avg3_ssse3:
@@ -380,8 +452,6 @@ png_read_filter_row_avg8_sse2:
 	ret
 ;png_read_filter_row_avg8_sss2 end
 
-global png_read_filter_row_paeth3_ssse3
-
 %macro paeth 0
 	movdqa xmm3, xmm1; pa = b
 	psubw xmm3, xmm2; pa = b - c
@@ -406,21 +476,34 @@ global png_read_filter_row_paeth3_ssse3
 	por xmm0, xmm3; res |= c & !tmp_mask
 %endmacro
 
-%macro mov34 2
-	movzx ebx, word [%2]
-	movzx ecx, byte [%2+2]
-	shl ecx, 16
-	or ebx, ecx
-	movd %1, ebx
-%endmacro
+global png_read_filter_row_paeth2_ssse3
+png_read_filter_row_paeth2_ssse3:
+	push_regs
+	init_regs
 
-%macro mov43 2
-	movd ebx, %2
-	mov [%1], bx
-	shr ebx, 16
-	mov [%1+2], bl
-%endmacro
+	pxor xmm7, xmm7
+	pxor xmm0, xmm0; a
+	pxor xmm2, xmm2; c
+	movd xmm6, [rowb+offs]; x
+	align_loop
+.loop:
+	movd xmm1, [prevrowb+offs]; b
+	punpcklbw xmm1, xmm7
+	paeth
+	packuswb xmm0, xmm7
+	movdqa xmm2, xmm1; c in the next iteration
+	paddb xmm0, xmm6
+	movd xmm6, [rowb+offs+0x2]; x in the next iteration
+	movd [rowb+offs], xmm0
+	punpcklbw xmm0, xmm7; a in the next iteration
+	add offs, 0x2
+	js .loop
 
+	pop_regs
+	ret
+;png_read_filter_row_paeth2_ssse3 end
+
+global png_read_filter_row_paeth3_ssse3
 png_read_filter_row_paeth3_ssse3:
 	push_regs
 	init_regs
@@ -428,16 +511,17 @@ png_read_filter_row_paeth3_ssse3:
 	pxor xmm7, xmm7
 	pxor xmm0, xmm0; a
 	pxor xmm2, xmm2; c
+	movd xmm6, [rowb+offs]; x
 	align_loop
 .loop:
-	mov34 xmm1, prevrowb+offs; b
+	movd xmm1, [prevrowb+offs]; b
 	punpcklbw xmm1, xmm7
 	paeth
 	packuswb xmm0, xmm7
 	movdqa xmm2, xmm1; c in the next iteration
-	mov34 xmm1, rowb+offs; x
-	paddb xmm0, xmm1
-	mov43 rowb+offs, xmm0
+	paddb xmm0, xmm6
+	movd xmm6, [rowb+offs+0x3]; x in the next iteration
+	movd [rowb+offs], xmm0
 	punpcklbw xmm0, xmm7; a in the next iteration
 	add offs, 0x3
 	js .loop
@@ -473,22 +557,6 @@ png_read_filter_row_paeth4_ssse3:
 ;png_read_filter_row_paeth4_ssse3 end
 
 global png_read_filter_row_paeth6_ssse3
-
-%macro mov68 2
-	movd %1, [%2]
-	movzx ebx, word [%2+4]
-	movd xmm6, ebx
-	punpckldq %1, xmm6
-%endmacro
-
-%macro mov86 2
-	movd [%1], %2
-	movdqa xmm6, %2
-	psrldq xmm6, 4
-	movd ebx, xmm6
-	mov [%1+4], bx
-%endmacro
-
 png_read_filter_row_paeth6_ssse3:
 	push_regs
 	init_regs
@@ -496,16 +564,17 @@ png_read_filter_row_paeth6_ssse3:
 	pxor xmm7, xmm7
 	pxor xmm0, xmm0; a
 	pxor xmm2, xmm2; c
+	movq xmm6, [rowb+offs]; x
 	align_loop
 .loop:
-	mov68 xmm1, prevrowb+offs; b
+	movq xmm1, [prevrowb+offs]; b
 	punpcklbw xmm1, xmm7
 	paeth
 	packuswb xmm0, xmm7
 	movdqa xmm2, xmm1; c in the next iteration
-	mov68 xmm1, rowb+offs; x
-	paddb xmm0, xmm1
-	mov86 rowb+offs, xmm0
+	paddb xmm0, xmm6
+	movq xmm6, [rowb+offs+0x6]; x in the next iteration
+	movq [rowb+offs], xmm0
 	punpcklbw xmm0, xmm7; a in the next iteration
 	add offs, 0x6
 	js .loop

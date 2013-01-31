@@ -121,14 +121,17 @@ int main() {
 
 	testcase_t testcases[] = {
 		{24, png_read_filter_row_up, png_read_filter_row_up_sse2, "up"},
+		{16, png_read_filter_row_sub, png_read_filter_row_sub2_ssse3, "sub2"},
 		{24, png_read_filter_row_sub, png_read_filter_row_sub3_ssse3, "sub3"},
 		{32, png_read_filter_row_sub, png_read_filter_row_sub4_ssse3, "sub4"},
 		{48, png_read_filter_row_sub, png_read_filter_row_sub6_ssse3, "sub6"},
 		{64, png_read_filter_row_sub, png_read_filter_row_sub8_ssse3, "sub8"},
+		{16, png_read_filter_row_avg, png_read_filter_row_avg2_sse2, "avg2"},
 		{24, png_read_filter_row_avg, png_read_filter_row_avg3_ssse3, "avg3"},
 		{32, png_read_filter_row_avg, png_read_filter_row_avg4_ssse3, "avg4"},
 		{48, png_read_filter_row_avg, png_read_filter_row_avg6_ssse3, "avg6"},
 		{64, png_read_filter_row_avg, png_read_filter_row_avg8_sse2, "avg8"},
+		{16, png_read_filter_row_paeth_multibyte_pixel, png_read_filter_row_paeth2_ssse3, "paeth2"},
 		{24, png_read_filter_row_paeth_multibyte_pixel, png_read_filter_row_paeth3_ssse3, "paeth3"},
 		{32, png_read_filter_row_paeth_multibyte_pixel, png_read_filter_row_paeth4_ssse3, "paeth4"},
 		{48, png_read_filter_row_paeth_multibyte_pixel, png_read_filter_row_paeth6_ssse3, "paeth6"},
