@@ -6,8 +6,9 @@
  * For conditions of distribution and use, see the disclaimer
  * and license in png.h
  */
-#ifdef PNG_ALIGNED_MEMORY_SUPPORTED
 #include "../pngpriv.h"
+
+#ifdef PNG_ALIGNED_MEMORY_SUPPORTED
 
 void png_init_filter_functions_ssse3(png_structp pp, unsigned int bpp) {
 	if (png_check_cpu_for_ssse3()) {
