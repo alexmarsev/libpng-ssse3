@@ -1,4 +1,4 @@
-; filter_ssse3.nasm - SSSE3 optimised filter functions
+; filter_ssse3.asm - SSSE3 optimised filter functions
 
 ; Copyright (c) 2012-2013 Alex Marsev
 

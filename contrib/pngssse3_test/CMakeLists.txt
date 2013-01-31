@@ -42,7 +42,7 @@ enable_language(ASM_NASM)
 message(STATUS "YASM flags: ${CMAKE_ASM_NASM_FLAGS_INIT}")
 
 set(pngssse3_test_sources ssse3_test.c
-	../../ssse3/filter_ssse3.nasm
+	../../ssse3/filter_ssse3.asm
 	../../pngmem.c
 	../../pngset.c
 	../../pngerror.c

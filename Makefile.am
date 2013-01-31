@@ -46,8 +46,8 @@ libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES += arm/arm_init.c\
 else
 if PNG_X86_SSSE3
 libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES += ssse3/ssse3_init.c\
-	ssse3/filter_ssse3.nasm
-.nasm.lo:
+	ssse3/filter_ssse3.asm
+.asm.lo:
 	$(LIBTOOL) --mode=compile $(srcdir)/ssse3/yasm-libtool.sh $(YASM) $(YASMFLAGS) $< -o $@
 endif
 endif
