@@ -26,6 +26,16 @@ avg6_step1_mask do 0xff02ff00ffffffffffffffffffffffff
 avg6_step0_mask do 0xffffffffff0eff0cff0aff08ff06ff04
 avg_pack_mask   do 0xffffffffffffffff0e0c0a0806040200
 
+%ifidn __OUTPUT_FORMAT__, elf
+section .note.GNU-stack noalloc noexec nowrite progbits
+%endif
+%ifidn __OUTPUT_FORMAT__, elf32
+section .note.GNU-stack noalloc noexec nowrite progbits
+%endif
+%ifidn __OUTPUT_FORMAT__, elf64
+section .note.GNU-stack noalloc noexec nowrite progbits
+%endif
+
 section .code
 
 %ifdef __x86_64__
