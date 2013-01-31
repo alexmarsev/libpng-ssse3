@@ -126,7 +126,7 @@ int main() {
 		{32, png_read_filter_row_sub, png_read_filter_row_sub4_ssse3, "sub4"},
 		{48, png_read_filter_row_sub, png_read_filter_row_sub6_ssse3, "sub6"},
 		{64, png_read_filter_row_sub, png_read_filter_row_sub8_ssse3, "sub8"},
-		{16, png_read_filter_row_avg, png_read_filter_row_avg2_sse2, "avg2"},
+		{16, png_read_filter_row_avg, png_read_filter_row_avg2_ssse3, "avg2"},
 		{24, png_read_filter_row_avg, png_read_filter_row_avg3_ssse3, "avg3"},
 		{32, png_read_filter_row_avg, png_read_filter_row_avg4_ssse3, "avg4"},
 		{48, png_read_filter_row_avg, png_read_filter_row_avg6_ssse3, "avg6"},

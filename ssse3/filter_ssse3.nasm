@@ -292,8 +292,8 @@ png_read_filter_row_sub8_ssse3:
 	ret
 ;png_read_filter_row_sub8_ssse3 end
 
-global png_read_filter_row_avg2_sse2
-png_read_filter_row_avg2_sse2:
+global png_read_filter_row_avg2_ssse3
+png_read_filter_row_avg2_ssse3:
 	push_regs
 	init_regs
 
@@ -325,7 +325,7 @@ png_read_filter_row_avg2_sse2:
 
 	pop_regs
 	ret
-;png_read_filter_row_avg2_sse2 end
+;png_read_filter_row_avg2_ssse3 end
 
 global png_read_filter_row_avg3_ssse3
 png_read_filter_row_avg3_ssse3:
