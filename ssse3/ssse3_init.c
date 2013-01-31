@@ -14,6 +14,11 @@ void png_init_filter_functions_ssse3(png_structp pp, unsigned int bpp) {
 	if (png_check_cpu_for_ssse3()) {
 		pp->read_filter[PNG_FILTER_VALUE_UP-1] = png_read_filter_row_up_sse2;
 		switch (bpp) {
+			case 2:
+				pp->read_filter[PNG_FILTER_VALUE_SUB-1] = png_read_filter_row_sub2_ssse3;
+				pp->read_filter[PNG_FILTER_VALUE_AVG-1] = png_read_filter_row_avg2_ssse3;
+				pp->read_filter[PNG_FILTER_VALUE_PAETH-1] = png_read_filter_row_paeth2_ssse3;
+				break;
 			case 3:
 				pp->read_filter[PNG_FILTER_VALUE_SUB-1] = png_read_filter_row_sub3_ssse3;
 				pp->read_filter[PNG_FILTER_VALUE_AVG-1] = png_read_filter_row_avg3_ssse3;
