@@ -352,7 +352,7 @@ png_read_filter_row_avg3_ssse3:
 	pshufb xmm0, xmm3
 	paddw xmm1, xmm0
 	movdqa xmm0, xmm1
-	psrlw xmm0, 1	
+	psrlw xmm0, 1
 	pshufb xmm0, xmm4
 	paddw xmm1, xmm0
 	psrlw xmm1, 1
