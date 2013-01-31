@@ -205,7 +205,7 @@ AC_ARG_ENABLE([ssse3],
 		if test "${enable_arm_neon}" = yes; then
 			AC_ERROR([unable to use both ARM NEON and SSSE3 at the same time])
 		fi
-		AC_CHECK_PROGS(YASM, yasm)
+		AC_CHECK_PROGS([YASM], [yasm])
 		if test -z "$YASM"; then
 			AC_ERROR([could not find yasm])
 		fi
@@ -230,6 +230,7 @@ AC_ARG_ENABLE([ssse3],
 				esac;;
 			*) AC_ERROR([unable to use SSSE3 on $host]);;
 		esac
+		AC_SUBST([YASMFLAGS])
 		AC_DEFINE([PNG_FILTER_OPTIMIZATIONS],
                           [png_init_filter_functions_ssse3],
                           [SSSE3 filter initialization function])

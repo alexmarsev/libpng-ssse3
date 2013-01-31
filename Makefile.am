@@ -43,6 +43,13 @@ libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES = png.c pngerror.c\
 if PNG_ARM_NEON
 libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES += arm/arm_init.c\
 	arm/filter_neon.S
+else
+if PNG_X86_SSSE3
+libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES += ssse3/ssse3_init.c\
+	ssse3/filter_ssse3.nasm
+.nasm.lo:
+	$(LIBTOOL) --mode=compile $(srcdir)/ssse3/yasm-libtool.sh $(YASM) $(YASMFLAGS) $< -o $@
+endif
 endif
 
 nodist_libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES = pnglibconf.h
