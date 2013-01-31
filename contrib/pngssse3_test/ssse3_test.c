@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <malloc.h>
 
-#include "../pngpriv.h"
-#include "../pngrutil.c"
+#include "pngpriv.h"
+#include "pngrutil.c"
 
 #define ROWLEN (9216 * 4)
 #define ALIGNMENT 16
