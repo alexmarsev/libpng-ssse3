@@ -82,7 +82,7 @@ testres_t performtest(png_row_info info, testcase_t testcase, png_const_bytep ro
 	int i;
 
 	info.pixel_depth = testcase.bpp;
-	info.width = info.rowbytes / info.pixel_depth;
+	info.width = info.rowbytes * 8 / info.pixel_depth;
 
 	workrow1 = (png_bytep)_aligned_malloc(ROWLEN + ALIGNMENT, ALIGNMENT);
 	workrow2 = (png_bytep)_aligned_malloc(ROWLEN + ALIGNMENT, ALIGNMENT);
@@ -165,8 +165,10 @@ int main() {
 			testres = performtest(info, testcases[i], rowp, prevrowp);
 
 			if (testres.ok) {
-				printf("%s: %f/%fs (simd/orig)\n",
-				       testcases[i].title, testres.simdtime, testres.origtime);
+				printf("%s: %f/%fs (simd/orig) (approx %d against %d megapixels/s)\n",
+				       testcases[i].title, testres.simdtime, testres.origtime,
+					   (int)(1 / testres.simdtime * ROWLEN * 8 / testcases[i].bpp / 1000000),
+					   (int)(1 / testres.origtime * ROWLEN * 8 / testcases[i].bpp / 1000000));
 			} else {
 				printf("%s: FAIL %f/%fs (simd/orig)\n",
 				       testcases[i].title, testres.simdtime, testres.origtime);
