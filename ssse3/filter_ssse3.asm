@@ -5,6 +5,10 @@
 ; This code is released under the libpng license.
 ; For conditions of distribution and use, see the disclaimer and license in png.h
 
+; This code expects row buffers to be aligned by 16 bytes
+; and have end padding of at least 14 bytes
+
+; Use long NOPs for alignment
 cpu intelnop
 
 section .data
@@ -26,6 +30,7 @@ avg6_step1_mask do 0xff02ff00ffffffffffffffffffffffff
 avg6_step0_mask do 0xffffffffff0eff0cff0aff08ff06ff04
 avg_pack_mask   do 0xffffffffffffffff0e0c0a0806040200
 
+; Mark ELF GNU_STACK as non-executable
 %ifidn __OUTPUT_FORMAT__, elf
 section .note.GNU-stack noalloc noexec nowrite progbits
 %endif
@@ -40,6 +45,7 @@ section .code
 
 %ifdef __x86_64__
 
+; Default to RIP-relative addressing
 default rel
 
 %define ptrax rax
@@ -68,7 +74,8 @@ default rel
 ; ptrbx - multipurpose
 ; ptrcx - multipurpose
 
-%define align_loop align 32
+; Align loops by 16 bytes, should optimize instruction fetch
+%define align_loop align 16
 
 %macro push_regs 0
 	push ptrbp
@@ -110,6 +117,7 @@ default rel
 %else
 	mov rbx, [rdi+0x8]
 	mov rowb, rsi
+	; prevrowb is already set as rdx
 %endif
 %else
 	mov rowb, [ebp+0xc]
@@ -309,7 +317,7 @@ png_read_filter_row_avg2_ssse3:
 	movd xmm2, [prevrowb+offs]
 	punpcklbw xmm2, xmm7
 	paddw xmm1, xmm1
-	paddw xmm2, xmm0; prevrowb + prevpixel
+	paddw xmm2, xmm0; prevrow + prevpixel
 	paddw xmm1, xmm2
 	movdqa xmm0, xmm1
 	psrlw xmm0, 1
@@ -345,7 +353,7 @@ png_read_filter_row_avg3_ssse3:
 	movq xmm2, [prevrowb+offs]
 	punpcklbw xmm2, xmm7
 	paddw xmm1, xmm1
-	paddw xmm2, xmm0; prevrowb + prevpixel
+	paddw xmm2, xmm0; prevrow + prevpixel
 	paddw xmm1, xmm2
 	movdqa xmm0, xmm1
 	psrlw xmm0, 1
@@ -384,7 +392,7 @@ png_read_filter_row_avg4_ssse3:
 	movq xmm2, [prevrowb+offs]
 	punpcklbw xmm2, xmm7
 	paddw xmm1, xmm1
-	paddw xmm2, xmm0; prevrowb + prevpixel
+	paddw xmm2, xmm0; prevrow + prevpixel
 	paddw xmm1, xmm2
 	movdqa xmm0, xmm1
 	psrlw xmm0, 1
@@ -419,7 +427,7 @@ png_read_filter_row_avg6_ssse3:
 	movq xmm2, [prevrowb+offs]
 	punpcklbw xmm2, xmm7
 	paddw xmm1, xmm1
-	paddw xmm2, xmm0; prevrowb + prevpixel
+	paddw xmm2, xmm0; prevrow + prevpixel
 	paddw xmm1, xmm2
 	movdqa xmm0, xmm1
 	psrlw xmm0, 1
@@ -449,7 +457,7 @@ png_read_filter_row_avg8_sse2:
 	movq xmm1, [rowb+offs]
 	movq xmm2, [prevrowb+offs]
 	punpcklbw xmm2, xmm7
-	paddw xmm0, xmm2; prevrowb + prevpixel
+	paddw xmm0, xmm2; prevrow + prevpixel
 	psrlw xmm0, 1
 	packuswb xmm0, xmm7
 	paddb xmm0, xmm1
