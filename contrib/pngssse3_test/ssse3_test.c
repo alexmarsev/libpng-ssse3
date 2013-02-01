@@ -13,9 +13,10 @@
 #include "pngpriv.h"
 #include "pngrutil.c"
 
-#define ROWLEN (9216 * 4)
+#define ROWLEN (8192 * 4)
 #define ALIGNMENT 16
-#define TRIES 10
+#define PASSES 16
+#define TRIES 4
 
 #ifndef _WIN32
 #include <time.h>
@@ -54,19 +55,22 @@ typedef struct {
 
 double timetest(pngfilterfunc func, png_row_infop infop, png_bytep rowp, png_const_bytep prevrowp) {
 	double res;
+	int i;
 #ifdef _WIN32
 	LARGE_INTEGER start, stop, freq;
 
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&start);
-	func(infop, rowp, prevrowp);
+	for (i = 0; i < PASSES; i++)
+		func(infop, rowp, prevrowp);
 	QueryPerformanceCounter(&stop);
 	res = (double)((long double)(stop.QuadPart - start.QuadPart) / freq.QuadPart);
 #else
 	struct timespec start, stop;
 
 	clock_gettime(CLOCK_REALTIME, &start);
-	func(infop, rowp, prevrowp);
+	for (i = 0; i < PASSES; i++)
+		func(infop, rowp, prevrowp);
 	clock_gettime(CLOCK_REALTIME, &stop);
 	res = (double)(stop.tv_sec - start.tv_sec);
 	res += (double)(stop.tv_nsec - start.tv_nsec) * 0.000000001;
@@ -161,14 +165,15 @@ int main() {
 		SetThreadAffinityMask(GetCurrentThread(), 1);
 #endif
 
+		printf("Results for %d passes on %dKB rows:\n", PASSES, ROWLEN / 1024);
 		for (i = 0; i < sizeof(testcases) / sizeof(testcase_t); i++) {
 			testres = performtest(info, testcases[i], rowp, prevrowp);
 
 			if (testres.ok) {
 				printf("%s: %f/%fs (simd/orig) (approx %d against %d megapixels/s)\n",
 				       testcases[i].title, testres.simdtime, testres.origtime,
-					   (int)(1 / testres.simdtime * ROWLEN * 8 / testcases[i].bpp / 1000000),
-					   (int)(1 / testres.origtime * ROWLEN * 8 / testcases[i].bpp / 1000000));
+					   (int)(1 / testres.simdtime * ROWLEN * PASSES * 8 / testcases[i].bpp / 1000000 + 0.5),
+					   (int)(1 / testres.origtime * ROWLEN * PASSES * 8 / testcases[i].bpp / 1000000 + 0.5));
 			} else {
 				printf("%s: FAIL %f/%fs (simd/orig)\n",
 				       testcases[i].title, testres.simdtime, testres.origtime);
