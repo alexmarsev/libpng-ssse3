@@ -1242,7 +1242,7 @@ test_one_file(PNG_CONST char *inname, PNG_CONST char *outname)
          memcpy(tIME_string,
                     png_convert_to_rfc1123(read_ptr, mod_time),
                     png_sizeof(tIME_string));
- 
+
          tIME_string[png_sizeof(tIME_string) - 1] = '\0';
          tIME_chunk_present++;
 #endif /* PNG_TIME_RFC1123_SUPPORTED */
@@ -1948,4 +1948,4 @@ main(void)
 #endif
 
 /* Generate a compiler error if there is an old png.h in the search path. */
-typedef png_libpng_version_1_5_15beta01 Your_png_h_is_not_version_1_5_15beta01;
+typedef png_libpng_version_1_5_15beta02 Your_png_h_is_not_version_1_5_15beta02;
