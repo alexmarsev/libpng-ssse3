@@ -78,15 +78,13 @@ default rel
 %macro push_regs 0
 	push ptrbp
 	mov ptrbp, ptrsp
+	push ptrdi
 %ifdef __x86_64__
 %ifdef _WINDOWS
-	push rdi
 	sub rsp, 0x20
 	movdqu [rsp], xmm6
 	movdqu [rsp+0x10], xmm7
 %endif
-%else
-	push edi
 %endif
 %endmacro
 
@@ -96,11 +94,9 @@ default rel
 	movdqu xmm7, [rsp+0x10]
 	movdqu xmm6, [rsp]
 	add rsp, 0x20
-	pop rdi
 %endif
-%else
-	pop edi
 %endif
+	pop ptrdi
 	pop ptrbp
 %endmacro
 
