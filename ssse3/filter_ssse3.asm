@@ -71,8 +71,6 @@ default rel
 %define offs ptrax ; offset (negative)
 %define prevrowb ptrdx ; previous row barrier
 %define rowb ptrdi ; current row barrier
-; ptrbx - multipurpose
-; ptrcx - multipurpose
 
 ; Align loops by 16 bytes, should optimize instruction fetch
 %define align_loop align 16
@@ -80,7 +78,6 @@ default rel
 %macro push_regs 0
 	push ptrbp
 	mov ptrbp, ptrsp
-	push ptrbx
 %ifdef __x86_64__
 %ifdef _WINDOWS
 	push rdi
@@ -104,7 +101,6 @@ default rel
 %else
 	pop edi
 %endif
-	pop ptrbx
 	pop ptrbp
 %endmacro
 
@@ -113,21 +109,21 @@ default rel
 %ifdef _WINDOWS
 	mov rowb, rdx
 	mov prevrowb, r8
-	mov rbx, [rcx+0x8]
+	mov rcx, [rcx+0x8]
 %else
-	mov rbx, [rdi+0x8]
+	mov rcx, [rdi+0x8]
 	mov rowb, rsi
 	; prevrowb is already set as rdx
 %endif
 %else
 	mov rowb, [ebp+0xc]
 	mov prevrowb, [ebp+0x10]
-	mov ebx, [ebp+0x8]
-	mov ebx, [ebx+0x4]
+	mov ecx, [ebp+0x8]
+	mov ecx, [ecx+0x4]
 %endif
 	mov offs, rowb
-	add rowb, ptrbx
-	add prevrowb, ptrbx
+	add rowb, ptrcx
+	add prevrowb, ptrcx
 	sub offs, rowb
 %endmacro
 
