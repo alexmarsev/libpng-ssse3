@@ -1017,7 +1017,7 @@ PNG_EXTERN void png_read_filter_row_paeth3_neon PNGARG((png_row_infop row_info,
 PNG_EXTERN void png_read_filter_row_paeth4_neon PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));
 
-PNG_EXTERN int png_check_cpu_for_ssse3();
+PNG_EXTERN png_int_32 png_check_cpu_for_ssse3();
 PNG_EXTERN void png_read_filter_row_up_sse2 PNGARG((png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row));
 PNG_EXTERN void png_read_filter_row_sub2_ssse3 PNGARG((png_row_infop row_info,

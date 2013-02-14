@@ -10,8 +10,15 @@
 
 #ifdef PNG_ALIGNED_MEMORY_SUPPORTED
 
+png_int_32 ssse3_suported = 0;
+png_int_32 ssse3_support_checked = 0;
+ 
 void png_init_filter_functions_ssse3(png_structp pp, unsigned int bpp) {
-	if (png_check_cpu_for_ssse3()) {
+	if (!ssse3_support_checked) {
+		ssse3_suported = png_check_cpu_for_ssse3();
+		ssse3_support_checked = 1;
+	}
+	if (ssse3_suported) {
 		pp->read_filter[PNG_FILTER_VALUE_UP-1] = png_read_filter_row_up_sse2;
 		switch (bpp) {
 			case 2:
