@@ -18,12 +18,12 @@ AC_PREREQ(2.59)
 
 dnl Version number stuff here:
 
-AC_INIT([libpng], [1.5.15beta06], [png-mng-implement@lists.sourceforge.net])
+AC_INIT([libpng], [1.5.15beta07], [png-mng-implement@lists.sourceforge.net])
 AM_INIT_AUTOMAKE([serial-tests])
 dnl stop configure from automagically running automake
 AM_MAINTAINER_MODE
 
-PNGLIB_VERSION=1.5.15beta06
+PNGLIB_VERSION=1.5.15beta07
 PNGLIB_MAJOR=1
 PNGLIB_MINOR=5
 PNGLIB_RELEASE=15
@@ -172,15 +172,22 @@ AC_SUBST([binconfigs])
 AC_SUBST([AM_CCASFLAGS], [-Wa,--noexecstack])
 
 AC_ARG_ENABLE([arm-neon],
-	AC_HELP_STRING([--enable-arm-neon], [Enable ARM NEON optimizations]),
-	[if test "${enableval}" = yes; then
-		AC_DEFINE([PNG_FILTER_OPTIMIZATIONS],
-                          [png_init_filter_functions_neon],
-                          [ARM NEON filter initialization function])
-		AC_DEFINE([PNG_ALIGNED_MEMORY_SUPPORTED], [1],
-                          [Align row buffers])
-	fi])
-AM_CONDITIONAL([PNG_ARM_NEON], [test "${enable_arm_neon:-no}" = yes])
+   AS_HELP_STRING([[[--enable-arm-neon]]],
+      [Enable ARM NEON optimizations: use 'always' to turn off run-time checks]),
+   [if test "${enableval}" = "yes" -o "${enableval}" = "always"; then
+       AC_DEFINE([PNG_FILTER_OPTIMIZATIONS],
+                 [png_init_filter_functions_neon],
+                 [ARM NEON filter initialization function])
+      AC_DEFINE([PNG_ALIGNED_MEMORY_SUPPORTED], [1],
+                [Align row buffers])
+      if test "${enableval}" = "always"; then
+         AC_DEFINE([PNG_NO_ARM_NEON_CHECK], [],
+                   [Turn off run-time checking for ARM NEON support])
+      fi
+    fi])
+AM_CONDITIONAL([PNG_ARM_NEON], [test "${enable_arm_neon:-no}" != "no"])
+ 
+ AC_MSG_NOTICE([[Extra options for compiler: $PNG_COPTS]])
 
 AC_ARG_ENABLE([ssse3],
 	AC_HELP_STRING([--enable-ssse3], [Enable SSSE3 optimizations]),
