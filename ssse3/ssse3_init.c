@@ -8,7 +8,9 @@
  */
 #include "../pngpriv.h"
 
-#ifdef PNG_ALIGNED_MEMORY_SUPPORTED
+#ifndef PNG_ALIGNED_MEMORY_SUPPORTED
+#  error "ALIGNED_MEMORY is required; set: -DPNG_ALIGNED_MEMORY_SUPPORTED"
+#endif
 
 png_int_32 ssse3_suported = 0;
 png_int_32 ssse3_support_checked = 0;
@@ -49,5 +51,3 @@ void png_init_filter_functions_ssse3(png_structp pp, unsigned int bpp) {
 		}
 	}
 }
-
-#endif
