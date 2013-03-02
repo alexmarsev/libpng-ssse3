@@ -18,12 +18,12 @@ AC_PREREQ(2.59)
 
 dnl Version number stuff here:
 
-AC_INIT([libpng], [1.5.15beta07], [png-mng-implement@lists.sourceforge.net])
+AC_INIT([libpng], [1.5.15beta08], [png-mng-implement@lists.sourceforge.net])
 AM_INIT_AUTOMAKE([serial-tests])
 dnl stop configure from automagically running automake
 AM_MAINTAINER_MODE
 
-PNGLIB_VERSION=1.5.15beta07
+PNGLIB_VERSION=1.5.15beta08
 PNGLIB_MAJOR=1
 PNGLIB_MINOR=5
 PNGLIB_RELEASE=15
@@ -178,7 +178,7 @@ AC_ARG_ENABLE([arm-neon],
        AC_DEFINE([PNG_FILTER_OPTIMIZATIONS],
                  [png_init_filter_functions_neon],
                  [ARM NEON filter initialization function])
-      AC_DEFINE([PNG_ALIGNED_MEMORY_SUPPORTED], [1],
+      AC_DEFINE([PNG_ALIGNED_MEMORY_SUPPORTED], [],
                 [Align row buffers])
       if test "${enableval}" = "always"; then
          AC_DEFINE([PNG_NO_ARM_NEON_CHECK], [],
