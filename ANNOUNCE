@@ -1,5 +1,5 @@
 
-Libpng 1.5.15beta09 - March 5, 2013
+Libpng 1.5.15rc01 - March 21, 2013
 
 This is not intended to be a public release.  It will be replaced
 within a few weeks by a public version or by another test version.
@@ -9,20 +9,20 @@ Files available for download:
 Source files with LF line endings (for Unix/Linux) and with a
 "configure" script
 
-   1.5.15beta09.tar.xz (LZMA-compressed, recommended)
-   1.5.15beta09.tar.gz
-   1.5.15beta09.tar.bz2
+   1.5.15rc01.tar.xz (LZMA-compressed, recommended)
+   1.5.15rc01.tar.gz
+   1.5.15rc01.tar.bz2
 
 Source files with CRLF line endings (for Windows), without the
 "configure" script
 
-   lp1515b09.7z  (LZMA-compressed, recommended)
-   lp1515b09.zip
+   lp1515r01.7z  (LZMA-compressed, recommended)
+   lp1515r01.zip
 
 Other information:
 
-   1.5.15beta09-README.txt
-   1.5.15beta09-LICENSE.txt
+   1.5.15rc01-README.txt
+   1.5.15rc01-LICENSE.txt
 
 Changes since the last public release (1.5.14):
 
@@ -90,7 +90,24 @@ Version 1.5.15beta08 [March 5, 2013]
     settings to depend on options and options can now set (or override) the
     defaults for settings.
 
-Version 1.5.15beta09 [March 5, 2013]
+Version 1.5.15beta09 [March 13, 2013]
+  Fixed CMakelists.txt to allow building a single variant of the library
+    (Claudio Bley):
+  Introduced a PNG_LIB_TARGETS variable that lists all activated library
+    targets.  It is an error if this variable ends up empty, ie. you have
+    to build at least one library variant.
+  Made the *_COPY targets only depend on library targets actually being build.
+  Use PNG_LIB_TARGETS to unify a code path.
+  Changed the CREATE_SYMLINK macro to expect the full path to a file as the
+    first argument. When symlinking the filename component of that path is
+    determined and used as the link target.
+  Use copy_if_different in the CREATE_SYMLINK macro.
+  Eliminated two warnings from the Intel C compiler. The warnings are
+    technically valid, although a reasonable treatment of division would
+    show it to be incorrect.
+
+Version 1.5.15rc01 [March 21, 2013]
+  No changes.
 
 Send comments/corrections/commendations to png-mng-implement at lists.sf.net
 (subscription required; visit
