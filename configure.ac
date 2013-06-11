@@ -18,15 +18,15 @@ AC_PREREQ(2.59)
 
 dnl Version number stuff here:
 
-AC_INIT([libpng], [1.5.16beta07], [png-mng-implement@lists.sourceforge.net])
+AC_INIT([libpng], [1.5.17beta02], [png-mng-implement@lists.sourceforge.net])
 AM_INIT_AUTOMAKE([serial-tests])
 dnl stop configure from automagically running automake
 AM_MAINTAINER_MODE
 
-PNGLIB_VERSION=1.5.16beta07
+PNGLIB_VERSION=1.5.17beta02
 PNGLIB_MAJOR=1
 PNGLIB_MINOR=5
-PNGLIB_RELEASE=16
+PNGLIB_RELEASE=17
 
 dnl End of version number stuff
 
@@ -179,11 +179,12 @@ AC_ARG_ENABLE([arm-neon],
       [Enable ARM NEON optimizations: =no/off, check, api, yes/on:]
       [no/off: disable the optimizations; check: use internal checking code]
       [(deprecated and poorly supported); api: disable by default, enable by]
-      [a call to png_set_option; yes/on: turn on unconditionally.]),
+      [a call to png_set_option; yes/on: turn on unconditionally.]
+      [If not specified: determined by the compiler.]),
    [case "$enableval" in
       no|off)
          # disable the default enabling on __ARM_NEON__ systems:
-         AC_DEFINE([PNG_NO_ARM_NEON], [],
+         AC_DEFINE([PNG_ARM_NEON_OPT], [0],
                    [Disable ARM Neon optimizations])
          # Prevent inclusion of the assembler files below:
          enable_arm_neon=no;;
@@ -194,8 +195,11 @@ AC_ARG_ENABLE([arm-neon],
          AC_DEFINE([PNG_ARM_NEON_API_SUPPORTED], [],
                    [Turn on ARM Neon optimizations at run-time]);;
       yes|on)
-         AC_DEFINE([PNG_ARM_NEON_SUPPORTED], [],
-                   [Enable ARM Neon optimizations]);;
+         AC_DEFINE([PNG_ARM_NEON_OPT], [2],
+                   [Enable ARM Neon optimizations])
+         AC_MSG_WARN([--enable-arm-neon: please specify 'check' or 'api', if]
+            [you want the optimizations unconditionally pass -mfpu=neon]
+            [to the compiler.]);;
       *)
          AC_MSG_ERROR([--enable-arm-neon=${enable_arm_neon}: invalid value])
    esac])
